@@ -90,6 +90,12 @@ h1 {
   transform: translateY(-1px);
 }
 
+.formulario-error {
+  color: #b42318;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .resumen {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -246,6 +252,10 @@ h1 {
 
   .formulario button {
     min-width: 124px;
+  }
+
+  .formulario-error {
+    grid-column: 1 / -1;
   }
 
   .item {

@@ -27,6 +27,7 @@ function App() {
   const [filtro, setFiltro] = useState<EstadoFiltro>('todas')
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
+  const [errorFormulario, setErrorFormulario] = useState('')
 
   const cargarTareas = useCallback(async () => {
     setCargando(true)
@@ -81,9 +82,11 @@ function App() {
 
     const tituloLimpio = titulo.trim()
     if (!tituloLimpio) {
+      setErrorFormulario('Completa este campo.')
       return
     }
 
+    setErrorFormulario('')
     setError('')
 
     try {
@@ -182,10 +185,18 @@ function App() {
             type="text"
             placeholder="ej hacer crud"
             value={titulo}
-            onChange={(evento) => setTitulo(evento.target.value)}
+            onChange={(evento) => {
+              const nuevoTitulo = evento.target.value
+              setTitulo(nuevoTitulo)
+
+              if (errorFormulario && nuevoTitulo.trim()) {
+                setErrorFormulario('')
+              }
+            }}
             maxLength={150}
           />
           <button type="submit">agregar</button>
+          {errorFormulario ? <p className="formulario-error">{errorFormulario}</p> : null}
         </form>
 
         <section className="resumen" aria-label="resumen de tareas">
