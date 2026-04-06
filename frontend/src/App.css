@@ -64,7 +64,20 @@ h1 {
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.formulario input:focus-visible {
+.formulario textarea {
+  width: 100%;
+  border: 1px solid var(--borde-suave);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background-color: #fff;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  resize: vertical;
+  min-height: 92px;
+  font: inherit;
+}
+
+.formulario input:focus-visible,
+.formulario textarea:focus-visible {
   outline: none;
   border-color: var(--fondo-acento);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--fondo-acento) 22%, transparent);
@@ -88,6 +101,12 @@ h1 {
 
 .formulario button:hover {
   transform: translateY(-1px);
+}
+
+.formulario-error {
+  color: #b42318;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .resumen {
@@ -190,7 +209,18 @@ h1 {
 }
 
 .item span {
+  display: grid;
+  gap: 4px;
   word-break: break-word;
+}
+
+.item span strong {
+  font-size: 1rem;
+}
+
+.item span small {
+  color: var(--texto-secundario);
+  font-size: 0.9rem;
 }
 
 .item.completada span {
@@ -244,8 +274,16 @@ h1 {
     grid-template-columns: 1fr auto;
   }
 
+  .formulario textarea {
+    grid-column: 1 / -1;
+  }
+
   .formulario button {
     min-width: 124px;
+  }
+
+  .formulario-error {
+    grid-column: 1 / -1;
   }
 
   .item {
