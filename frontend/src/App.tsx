@@ -13,9 +13,9 @@ type Tarea = {
   actualizadaEn: string
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
-const filtroEtiquetas: Record<EstadoFiltro, string> = {
+const etiquetasPorFiltro: Record<EstadoFiltro, string> = {
   todas: 'todas',
   pendientes: 'pendientes',
   completadas: 'completadas',
@@ -31,12 +31,54 @@ function App() {
   const [errorTitulo, setErrorTitulo] = useState('')
   const [errorDescripcion, setErrorDescripcion] = useState('')
 
+  const validarFormularioTarea = () => {
+    const tituloLimpio = titulo.trim()
+    const descripcionLimpia = descripcion.trim()
+
+    const tituloInvalido = !tituloLimpio
+    const descripcionInvalida = !descripcionLimpia
+
+    setErrorTitulo(tituloInvalido ? 'Completa el titulo.' : '')
+    setErrorDescripcion(descripcionInvalida ? 'Completa la descripcion.' : '')
+
+    if (tituloInvalido || descripcionInvalida) {
+      return null
+    }
+
+    return { tituloLimpio, descripcionLimpia }
+  }
+
+  const ejecutarOperacionTarea = async (
+    ejecutarSolicitud: () => Promise<Response>,
+    mensajeError: string,
+    permitirNoContent = false,
+  ) => {
+    setError('')
+
+    try {
+      const respuesta = await ejecutarSolicitud()
+      const operacionExitosa = permitirNoContent
+        ? respuesta.ok || respuesta.status === 204
+        : respuesta.ok
+
+      if (!operacionExitosa) {
+        throw new Error(mensajeError)
+      }
+
+      await cargarTareas()
+      return true
+    } catch {
+      setError(mensajeError)
+      return false
+    }
+  }
+
   const cargarTareas = useCallback(async () => {
     setCargando(true)
     setError('')
 
     try {
-      const respuesta = await fetch(`${API_URL}/tareas`)
+      const respuesta = await fetch(`${API_BASE_URL}/tareas`)
 
       if (!respuesta.ok) {
         throw new Error('No se pudo cargar la lista de tareas.')
@@ -82,101 +124,80 @@ function App() {
   const crearTarea = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault()
 
-    const tituloLimpio = titulo.trim()
-    const descripcionLimpia = descripcion.trim()
-
-    if (!tituloLimpio) {
-      setErrorTitulo('Completa el titulo.')
-    }
-
-    if (!descripcionLimpia) {
-      setErrorDescripcion('Completa la descripcion.')
-    }
-
-    if (!tituloLimpio || !descripcionLimpia) {
+    const datosValidados = validarFormularioTarea()
+    if (!datosValidados) {
       return
     }
 
-    setErrorTitulo('')
-    setErrorDescripcion('')
-    setError('')
+    const creada = await ejecutarOperacionTarea(
+      () =>
+        fetch(`${API_BASE_URL}/tareas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            titulo: datosValidados.tituloLimpio,
+            descripcion: datosValidados.descripcionLimpia,
+          }),
+        }),
+      'No se pudo crear la tarea.',
+    )
 
-    try {
-      const respuesta = await fetch(`${API_URL}/tareas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ titulo: tituloLimpio, descripcion: descripcionLimpia }),
-      })
-
-      if (!respuesta.ok) {
-        throw new Error('No se pudo crear la tarea.')
-      }
-
+    if (creada) {
       setTitulo('')
       setDescripcion('')
-      await cargarTareas()
-    } catch {
-      setError('No se pudo crear la tarea.')
     }
   }
 
   const alternarEstado = async (id: string, completadaActual: boolean) => {
-    setError('')
-
-    try {
-      const respuesta = await fetch(`${API_URL}/tareas/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ completada: !completadaActual }),
-      })
-
-      if (!respuesta.ok) {
-        throw new Error('No se pudo actualizar la tarea.')
-      }
-
-      await cargarTareas()
-    } catch {
-      setError('No se pudo actualizar la tarea.')
-    }
+    await ejecutarOperacionTarea(
+      () =>
+        fetch(`${API_BASE_URL}/tareas/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ completada: !completadaActual }),
+        }),
+      'No se pudo actualizar la tarea.',
+    )
   }
 
   const eliminarTarea = async (id: string) => {
-    setError('')
-
-    try {
-      const respuesta = await fetch(`${API_URL}/tareas/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!respuesta.ok && respuesta.status !== 204) {
-        throw new Error('No se pudo eliminar la tarea.')
-      }
-
-      await cargarTareas()
-    } catch {
-      setError('No se pudo eliminar la tarea.')
-    }
+    await ejecutarOperacionTarea(
+      () =>
+        fetch(`${API_BASE_URL}/tareas/${id}`, {
+          method: 'DELETE',
+        }),
+      'No se pudo eliminar la tarea.',
+      true,
+    )
   }
 
   const limpiarCompletadas = async () => {
-    setError('')
+    await ejecutarOperacionTarea(
+      () =>
+        fetch(`${API_BASE_URL}/tareas/completadas`, {
+          method: 'DELETE',
+        }),
+      'No se pudieron limpiar las completadas.',
+    )
+  }
 
-    try {
-      const respuesta = await fetch(`${API_URL}/tareas/completadas`, {
-        method: 'DELETE',
-      })
+  const manejarCambioTitulo = (valor: string) => {
+    setTitulo(valor)
 
-      if (!respuesta.ok) {
-        throw new Error('No se pudieron limpiar las completadas.')
-      }
+    if (errorTitulo && valor.trim()) {
+      setErrorTitulo('')
+    }
+  }
 
-      await cargarTareas()
-    } catch {
-      setError('No se pudieron limpiar las completadas.')
+  const manejarCambioDescripcion = (valor: string) => {
+    setDescripcion(valor)
+
+    if (errorDescripcion && valor.trim()) {
+      setErrorDescripcion('')
     }
   }
 
@@ -198,14 +219,7 @@ function App() {
             type="text"
             placeholder="ej hacer crud"
             value={titulo}
-            onChange={(evento) => {
-              const nuevoTitulo = evento.target.value
-              setTitulo(nuevoTitulo)
-
-              if (errorTitulo && nuevoTitulo.trim()) {
-                setErrorTitulo('')
-              }
-            }}
+            onChange={(evento) => manejarCambioTitulo(evento.target.value)}
             maxLength={150}
           />
           {errorTitulo ? <p className="formulario-error">{errorTitulo}</p> : null}
@@ -217,14 +231,7 @@ function App() {
             id="descripcion-tarea"
             placeholder="ej hacer crud sin erroores"
             value={descripcion}
-            onChange={(evento) => {
-              const nuevaDescripcion = evento.target.value
-              setDescripcion(nuevaDescripcion)
-
-              if (errorDescripcion && nuevaDescripcion.trim()) {
-                setErrorDescripcion('')
-              }
-            }}
+            onChange={(evento) => manejarCambioDescripcion(evento.target.value)}
             maxLength={280}
             rows={3}
           />
@@ -249,14 +256,14 @@ function App() {
         </section>
 
         <section className="barra-filtros" aria-label="filtros">
-          {(Object.keys(filtroEtiquetas) as EstadoFiltro[]).map((opcion) => (
+          {(Object.keys(etiquetasPorFiltro) as EstadoFiltro[]).map((opcion) => (
             <button
               key={opcion}
               type="button"
               className={filtro === opcion ? 'activo' : ''}
               onClick={() => setFiltro(opcion)}
             >
-              {filtroEtiquetas[opcion]}
+              {etiquetasPorFiltro[opcion]}
             </button>
           ))}
           <button
