@@ -24,10 +24,12 @@ const filtroEtiquetas: Record<EstadoFiltro, string> = {
 function App() {
   const [tareas, setTareas] = useState<Tarea[]>([])
   const [titulo, setTitulo] = useState('')
+  const [descripcion, setDescripcion] = useState('')
   const [filtro, setFiltro] = useState<EstadoFiltro>('todas')
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
-  const [errorFormulario, setErrorFormulario] = useState('')
+  const [errorTitulo, setErrorTitulo] = useState('')
+  const [errorDescripcion, setErrorDescripcion] = useState('')
 
   const cargarTareas = useCallback(async () => {
     setCargando(true)
@@ -81,12 +83,22 @@ function App() {
     evento.preventDefault()
 
     const tituloLimpio = titulo.trim()
+    const descripcionLimpia = descripcion.trim()
+
     if (!tituloLimpio) {
-      setErrorFormulario('Completa este campo.')
+      setErrorTitulo('Completa el titulo.')
+    }
+
+    if (!descripcionLimpia) {
+      setErrorDescripcion('Completa la descripcion.')
+    }
+
+    if (!tituloLimpio || !descripcionLimpia) {
       return
     }
 
-    setErrorFormulario('')
+    setErrorTitulo('')
+    setErrorDescripcion('')
     setError('')
 
     try {
@@ -95,7 +107,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ titulo: tituloLimpio }),
+        body: JSON.stringify({ titulo: tituloLimpio, descripcion: descripcionLimpia }),
       })
 
       if (!respuesta.ok) {
@@ -103,6 +115,7 @@ function App() {
       }
 
       setTitulo('')
+      setDescripcion('')
       await cargarTareas()
     } catch {
       setError('No se pudo crear la tarea.')
@@ -173,7 +186,7 @@ function App() {
         <header className="encabezado">
           <p className="kicker">tareas to do examen final</p>
           <h1>lista de tareas</h1>
-          <p className="subtitulo">conectada al backend y base de datos postgres</p>
+          <p className="subtitulo"></p>
         </header>
 
         <form className="formulario" onSubmit={(evento) => void crearTarea(evento)}>
@@ -189,14 +202,35 @@ function App() {
               const nuevoTitulo = evento.target.value
               setTitulo(nuevoTitulo)
 
-              if (errorFormulario && nuevoTitulo.trim()) {
-                setErrorFormulario('')
+              if (errorTitulo && nuevoTitulo.trim()) {
+                setErrorTitulo('')
               }
             }}
             maxLength={150}
           />
+          {errorTitulo ? <p className="formulario-error">{errorTitulo}</p> : null}
+
+          <label htmlFor="descripcion-tarea" className="sr-only">
+            ingrese una descripcion
+          </label>
+          <textarea
+            id="descripcion-tarea"
+            placeholder="ej hacer crud sin erroores"
+            value={descripcion}
+            onChange={(evento) => {
+              const nuevaDescripcion = evento.target.value
+              setDescripcion(nuevaDescripcion)
+
+              if (errorDescripcion && nuevaDescripcion.trim()) {
+                setErrorDescripcion('')
+              }
+            }}
+            maxLength={280}
+            rows={3}
+          />
+          {errorDescripcion ? <p className="formulario-error">{errorDescripcion}</p> : null}
+
           <button type="submit">agregar</button>
-          {errorFormulario ? <p className="formulario-error">{errorFormulario}</p> : null}
         </form>
 
         <section className="resumen" aria-label="resumen de tareas">
@@ -251,7 +285,10 @@ function App() {
                       checked={tarea.completada}
                       onChange={() => void alternarEstado(tarea.id, tarea.completada)}
                     />
-                    <span>{tarea.titulo}</span>
+                    <span>
+                      <strong>{tarea.titulo}</strong>
+                      {tarea.descripcion ? <small>{tarea.descripcion}</small> : null}
+                    </span>
                   </label>
                   <button
                     type="button"
