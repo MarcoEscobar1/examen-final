@@ -1,0 +1,54 @@
+:root {
+  --fondo-base: #f4efe2;
+  --fondo-panel: #fffdf7;
+  --fondo-acento: #0f856d;
+  --fondo-acento-oscuro: #0c5f54;
+  --texto-principal: #1d2523;
+  --texto-secundario: #586765;
+  --borde-suave: #d7d1c2;
+  --peligro: #c63a3a;
+  --sombra-panel: 0 18px 40px rgba(31, 48, 43, 0.15);
+
+  --fuente-titulo: 'Fraunces', 'Arial', serif;
+  --fuente-cuerpo: 'Manrope', 'Segoe UI', sans-serif;
+
+  font-family: var(--fuente-cuerpo);
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--texto-principal);
+  background-color: var(--fondo-base);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% 12%, #f8c978 0 14%, transparent 45%),
+    radial-gradient(circle at 88% 8%, #7fd9c2 0 14%, transparent 42%),
+    radial-gradient(circle at 80% 84%, #f1a1a1 0 16%, transparent 44%),
+    linear-gradient(145deg, #f8f4e8, #ece7db);
+  color: var(--texto-principal);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
